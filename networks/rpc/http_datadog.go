@@ -29,9 +29,11 @@ func newDatadogHTTPHandler(handler http.Handler) http.Handler {
 		}()
 
 		reqMethod := ""
+		reqParam := ""
 
 		// parse RPC requests
 		reqs, isBatch, err := getRPCRequests(r)
+
 		if err != nil || len(reqs) < 1 {
 			// The error will be handled in `handler.ServeHTTP()` and printed with `printRPCErrorLog()`
 			logger.Debug("failed to parse RPC request", "err", err, "len(reqs)", len(reqs))
@@ -40,6 +42,8 @@ func newDatadogHTTPHandler(handler http.Handler) http.Handler {
 			if isBatch {
 				reqMethod += "_batch"
 			}
+			encoded, _ := json.Marshal(reqs[0].params)
+			reqParam = string(encoded)
 		}
 
 		// new relic transaction name contains the first API method of the request
@@ -52,6 +56,7 @@ func newDatadogHTTPHandler(handler http.Handler) http.Handler {
 		}
 
 		httptrace.TraceAndServe(handler, dupW, r, &httptrace.ServeConfig{
+			Service:     os.Getenv("DD_SERVICE"),
 			Resource:    resource,
 			QueryParams: true,
 			SpanOpts: []ddtrace.StartSpanOption{
@@ -60,6 +65,8 @@ func newDatadogHTTPHandler(handler http.Handler) http.Handler {
 				tracer.Tag("http.host", r.Header.Get("HOST")),
 				tracer.Tag("http.content-type", r.Header.Get("Content-Type")),
 				tracer.Tag("http.user-agent", r.Header.Get("User-Agent")),
+				tracer.Tag("request.method", reqMethod),
+				tracer.Tag("request.params", reqParam),
 			},
 		})
 
