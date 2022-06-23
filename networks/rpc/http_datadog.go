@@ -65,6 +65,7 @@ func newDatadogHTTPHandler(handler http.Handler) http.Handler {
 				tracer.Tag("http.host", r.Header.Get("HOST")),
 				tracer.Tag("http.content-type", r.Header.Get("Content-Type")),
 				tracer.Tag("http.user-agent", r.Header.Get("User-Agent")),
+				tracer.Tag("http.x-forwarded-for", r.Header.Get("X-Forwarded-For")),
 				tracer.Tag("request.method", reqMethod),
 				tracer.Tag("request.params", reqParam),
 			},
