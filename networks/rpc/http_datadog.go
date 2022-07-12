@@ -16,7 +16,11 @@ func newDatadogTracer() bool {
 		return false
 	}
 
-	tracer.Start()
+	rules := []tracer.SamplingRule{
+		// sample 100.00% of traces for all spans
+		tracer.RateRule(1.0000),
+	}
+	tracer.Start(tracer.WithSamplingRules(rules))
 	return true
 }
 
